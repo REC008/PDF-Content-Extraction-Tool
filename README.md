@@ -25,6 +25,7 @@ To run the application locally:
    ```bash
    git clone https://github.com/your-username/pdf-content-extraction-tool.git
    cd pdf-content-extraction-tool
+   run app.py
 
 Install python site-packages `pip install -r /path/to/requirements.txt`
 
