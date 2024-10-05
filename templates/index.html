@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Content Extraction Tool</title>
+    <script>
+        function findText() {
+            var text = document.getElementById('search_text').value;
+            var pdfFilename = document.getElementById('pdf_filename').value;
+
+            fetch('/find_text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'text=' + encodeURIComponent(text) + '&pdf_filename=' + encodeURIComponent(pdfFilename)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    var resultDiv = document.getElementById('search_results');
+                    resultDiv.innerHTML = '';
+
+                    if (data.results.length === 0) {
+                        resultDiv.innerHTML = 'No matches found.';
+                    } else {
+                        data.results.forEach(position => {
+                            var positionText = `Page ${position.page}, Line ${position.line}: ${position.text} (x: ${position.x}, y: ${position.y})`;
+                            var p = document.createElement('p');
+                            p.innerHTML = positionText;
+                            resultDiv.appendChild(p);
+                        });
+                    }
+
+                    // Display the full text with highlights
+                    var textDiv = document.getElementById('full_text');
+                    textDiv.innerHTML = '';
+                    for (const [pageNumber, text] of Object.entries(data.full_text)) {
+                        var pageText = document.createElement('div');
+                        pageText.innerHTML = `<h3>Page ${parseInt(pageNumber) + 1}</h3><pre>${text}</pre>`;
+                        textDiv.appendChild(pageText);
+                    }
+                });
+        }
+    </script>
+    <style>
+        mark {
+            background-color: yellow;
+            font-weight: bold;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .box-title {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            width: fit-content;
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center; /* Center align the title */
+        }
+
+        /* Adding spacing between sections */
+        form {
+            margin-bottom: 20px; /* Space below the form */
+        }
+
+        #search_results {
+            margin-top: 10px; /* Space above search results */
+        }
+
+        img {
+            margin-bottom: 10px; /* Space below each image */
+        }
+
+        /* Style for the Find Text section */
+        .find-text-container {
+            position: absolute;
+            top: 20px; /* Adjust the vertical position */
+            right: 20px; /* Adjust the horizontal position */
+            width: fit-content;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>PDF Content Extraction Tool</h1>
+
+    <div class="box-title">Upload PDF</div>
+    <form action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="pdf_file" required>
+        <input type="submit" value="Upload">
+    </form>
+
+    <div class="find-text-container">
+        <div class="box-title">Find Text</div>
+        <form onsubmit="event.preventDefault(); findText();">
+            <input type="text" id="search_text" placeholder="Enter text to find" required>
+            <input type="hidden" id="pdf_filename" value="{{ pdf_filename }}">
+            <input type="submit" value="Find">
+        </form>
+        <div id="search_results"></div>
+    </div>
+
+    <div class="box-title">PDF Images</div>
+    {% for image_url, text in combined_data %}
+    <div>
+        <img src="{{ image_url }}" alt="PDF Page Image">
+        <pre>{{ text }}</pre>
+    </div>
+    {% endfor %}
+
+    <div class="box-title">Extracted Images from PDF</div>
+    {% for image_url in extracted_images %}
+    <img src="{{ image_url }}" alt="Extracted Image">
+    {% endfor %}
+
+    <div class="box-title">Extracted Text from PDF</div>
+    {% for text in text_from_pdf %}
+    <pre>{{ text }}</pre>
+    {% endfor %}
+</body>
+
+</html>
